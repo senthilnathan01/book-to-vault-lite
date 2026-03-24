@@ -31,10 +31,10 @@ pip install -r requirements.txt
 
 ```bash
 python prepare_sections.py \
-  --pdf books/inference_engineering.pdf \
-  --book-slug inference_engineering \
-  --book-title "Inference Engineering" \
-  --author "Philip Kiely"
+  --pdf /path/to/technical_book.pdf \
+  --book-slug technical_book_slug \
+  --book-title "Technical Book Title" \
+  --author "Author Name"
 ```
 
 Supported arguments:
@@ -56,7 +56,7 @@ Supported arguments:
 Example output layout:
 
 ```text
-data/processed/inference_engineering/
+data/processed/<book_slug>/
   chapter_01/
     section_01.md
     section_02.md
@@ -88,17 +88,17 @@ This repo assumes `knowledge-vault` is a separate repo.
 The prompts assume a target structure like:
 
 ```text
-01_books/inference_engineering/_system/global_working_memory.md
-01_books/inference_engineering/_system/book_index.md
-01_books/inference_engineering/chapter_01/chapter_summary.md
-01_books/inference_engineering/chapter_01/section_01_note.md
+01_books/<book_slug>/_system/global_working_memory.md
+01_books/<book_slug>/_system/book_index.md
+01_books/<book_slug>/chapter_01/chapter_summary.md
+01_books/<book_slug>/chapter_01/section_01_note.md
 02_concepts/
 ```
 
 Important: global working memory is per book and belongs under the book folder, for example:
 
 ```text
-01_books/inference_engineering/_system/global_working_memory.md
+01_books/<book_slug>/_system/global_working_memory.md
 ```
 
 It should not live in a repo-wide system folder.

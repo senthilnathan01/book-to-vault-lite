@@ -4,7 +4,7 @@ Use this later with Codex to create or update the per-book global working memory
 
 Target location example:
 
-`01_books/inference_engineering/_system/global_working_memory.md`
+`01_books/<book_slug>/_system/global_working_memory.md`
 
 This file is per book. It is not a repo-wide system note.
 
