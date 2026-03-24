@@ -1,10 +1,10 @@
 # Final Export Prompt
 
-Use this at the end of a section study chat.
+Use this at the end of a chapter study chat.
 
 Your job is to produce a detailed markdown export that preserves the important knowledge from:
 
-- the source section chunk
+- the source chapter file
 - the discussion in this chat
 - clarifications, corrections, caveats, and examples that came up during study
 
@@ -19,7 +19,7 @@ The output is for long-term storage in Obsidian and must still be useful months 
 - Preserve examples that materially improve understanding.
 - Keep terminology precise.
 - When the chat introduced useful reformulations or mental models, keep them.
-- If the source section was ambiguous and the chat resolved that ambiguity, record the resolved interpretation and note that it was a clarification.
+- If the source chapter was ambiguous and the chat resolved that ambiguity, record the resolved interpretation and note that it was a clarification.
 - If something remains uncertain, mark it clearly instead of smoothing it over.
 - Prefer readable paragraphs and bullets over sparse fragments.
 - Output only markdown. Do not wrap the result in code fences.
@@ -27,16 +27,18 @@ The output is for long-term storage in Obsidian and must still be useful months 
 ## Required output structure
 
 ```markdown
-# <Section Note Title>
+# <Chapter Note Title>
 
 ## Source
 - Book:
 - Chapter:
-- Section:
 - Source pages:
 
-## Section Thesis
-A short paragraph explaining the main point of this section.
+## Chapter Thesis
+A short paragraph explaining the main point of this chapter.
+
+## Chapter Structure
+- Major subsection/grouping -> role in the chapter
 
 ## Detailed Notes
 Write the detailed explanation here.
@@ -57,7 +59,7 @@ Write the detailed explanation here.
 - Term: definition
 
 ## Connections
-- Link this section to earlier or later parts of the book when relevant.
+- Link this chapter to earlier or later parts of the book when relevant.
 - Mention concept-note candidates if they seem reusable beyond this book.
 
 ## Open Questions

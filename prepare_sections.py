@@ -16,7 +16,7 @@ SIMPLE_HEADING_RE = re.compile(r"^(\d+)\s+([A-Z][^.?!]{1,90})$")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Extract a technical PDF into chat-ready markdown section files."
+        description="Extract a technical PDF into chat-ready markdown chapter files."
     )
     parser.add_argument("--pdf", required=True, help="Path to the source PDF.")
     parser.add_argument("--book-slug", help="Stable slug used for the output folder.")
@@ -219,9 +219,8 @@ def parse_heading(text: str, prev_text: str, next_text: str) -> dict | None:
     match = SIMPLE_HEADING_RE.match(stripped)
     if match and prev_blank and next_blank and len(stripped.split()) <= 10:
         return {
-            "kind": "section",
-            "section_number": match.group(1),
-            "chapter_hint": int(match.group(1)),
+            "kind": "chapter",
+            "chapter_number": int(match.group(1)),
             "label": stripped,
         }
 
@@ -365,7 +364,17 @@ def build_heading_chunks(pages: list[dict]) -> tuple[list[dict], dict]:
                 generic_hits += 1
             else:
                 chapter_hint = heading.get("chapter_hint")
-                if chapter["title"] == "Unspecified" and chapter_hint:
+                if chapter_hint and chapter.get("number") and chapter_hint != chapter["number"]:
+                    finalize_chunk(chunks, current_chunk)
+                    chapter = {
+                        "index": chapter_hint,
+                        "number": chapter_hint,
+                        "title": f"Chapter {chapter_hint}",
+                    }
+                    chapter_index = chapter_hint
+                    section_index = 0
+                    current_chunk = None
+                elif chapter["title"] == "Unspecified" and chapter_hint:
                     chapter = {
                         "index": chapter_hint,
                         "number": chapter_hint,
@@ -416,8 +425,7 @@ def build_heading_chunks(pages: list[dict]) -> tuple[list[dict], dict]:
 
 def build_fallback_chunks(pages: list[dict]) -> list[dict]:
     chunks: list[dict] = []
-    chapter = {"index": 1, "number": None, "title": "Fallback chapter"}
-    section_index = 0
+    chapter_index = 0
     current_chunk: dict | None = None
 
     for page in pages:
@@ -426,24 +434,34 @@ def build_fallback_chunks(pages: list[dict]) -> list[dict]:
             continue
 
         if not current_chunk:
-            section_index += 1
+            chapter_index += 1
+            chapter = {
+                "index": chapter_index,
+                "number": None,
+                "title": f"Fallback chapter {chapter_index}",
+            }
             current_chunk = make_chunk(
                 chapter=chapter,
-                section_index=section_index,
-                title=f"Fallback chunk {section_index}",
+                section_index=1,
+                title=chapter["title"],
                 start_page=page["page_num"],
             )
 
         projected_pages = page["page_num"] - current_chunk["start_page"] + 1
         projected_chars = content_char_count(current_chunk["lines"]) + page_chars
 
-        if current_chunk["lines"] and (projected_pages > 8 or projected_chars > 18000):
+        if current_chunk["lines"] and (projected_pages > 20 or projected_chars > 45000):
             finalize_chunk(chunks, current_chunk)
-            section_index += 1
+            chapter_index += 1
+            chapter = {
+                "index": chapter_index,
+                "number": None,
+                "title": f"Fallback chapter {chapter_index}",
+            }
             current_chunk = make_chunk(
                 chapter=chapter,
-                section_index=section_index,
-                title=f"Fallback chunk {section_index}",
+                section_index=1,
+                title=chapter["title"],
                 start_page=page["page_num"],
             )
 
@@ -455,38 +473,103 @@ def build_fallback_chunks(pages: list[dict]) -> list[dict]:
     return chunks
 
 
-def write_chunks(
+def chapter_label_for(chunk: dict) -> str:
+    chapter_label = chunk["chapter_title"]
+    if chunk["chapter_number"] and chapter_label == "Unspecified":
+        return f"Chapter {chunk['chapter_number']}"
+    return chapter_label
+
+
+def merge_chapters(chunks: list[dict]) -> list[dict]:
+    merged: list[dict] = []
+    by_index: dict[int, dict] = {}
+
+    for chunk in chunks:
+        chapter_index = chunk["chapter_index"]
+        chapter = by_index.get(chapter_index)
+        if chapter is None:
+            chapter = {
+                "chapter_index": chapter_index,
+                "chapter_number": chunk["chapter_number"],
+                "chapter_title": chunk["chapter_title"],
+                "start_page": chunk["start_page"],
+                "end_page": chunk["end_page"],
+                "chunks": [],
+            }
+            by_index[chapter_index] = chapter
+            merged.append(chapter)
+
+        chapter["start_page"] = min(chapter["start_page"], chunk["start_page"])
+        chapter["end_page"] = max(chapter["end_page"], chunk["end_page"])
+        if chapter["chapter_title"] == "Unspecified" and chunk["chapter_title"] != "Unspecified":
+            chapter["chapter_title"] = chunk["chapter_title"]
+        if chapter["chapter_number"] is None and chunk["chapter_number"] is not None:
+            chapter["chapter_number"] = chunk["chapter_number"]
+        chapter["chunks"].append(chunk)
+
+    return merged
+
+
+def render_chapter_content(chapter_label: str, chapter_chunks: list[dict]) -> str:
+    parts: list[str] = []
+
+    for chunk in chapter_chunks:
+        content = chunk["content"].strip()
+        if not content:
+            continue
+
+        section_title = chunk["section_title"].strip()
+        add_heading = (
+            len(chapter_chunks) > 1
+            and section_title
+            and section_title != chapter_label
+            and not section_title.lower().startswith("opening chunk")
+            and not section_title.lower().startswith("fallback chapter")
+        )
+
+        if add_heading:
+            parts.append(f"## {section_title}")
+            parts.append("")
+
+        parts.append(content)
+        parts.append("")
+
+    return "\n".join(parts).strip()
+
+
+def write_chapters(
     chunks: list[dict],
     output_dir: Path,
     book_title: str,
     author: str,
 ) -> list[Path]:
     written_files: list[Path] = []
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    for chunk in chunks:
-        chapter_dir = output_dir / f"chapter_{chunk['chapter_index']:02d}"
-        chapter_dir.mkdir(parents=True, exist_ok=True)
-        output_path = chapter_dir / f"section_{chunk['section_index']:02d}.md"
-
-        chapter_label = chunk["chapter_title"]
-        if chunk["chapter_number"] and chapter_label == "Unspecified":
-            chapter_label = f"Chapter {chunk['chapter_number']}"
+    for chapter in merge_chapters(chunks):
+        first_chunk = {
+            "chapter_title": chapter["chapter_title"],
+            "chapter_number": chapter["chapter_number"],
+        }
+        chapter_label = chapter_label_for(first_chunk)
+        output_path = output_dir / f"chapter{chapter['chapter_index']:02d}.md"
+        content = render_chapter_content(chapter_label, chapter["chunks"])
 
         metadata = [
-            "# Section Chunk",
+            "# Chapter Chunk",
             "",
             f"- Book: {book_title}",
             f"- Author: {author or 'Unknown'}",
             f"- Chapter: {chapter_label}",
-            f"- Section: {chunk['section_title']}",
-            f"- Source pages: {chunk['start_page']}-{chunk['end_page']}",
-            f"- Chunk id: chapter_{chunk['chapter_index']:02d}_section_{chunk['section_index']:02d}",
+            f"- Source pages: {chapter['start_page']}-{chapter['end_page']}",
+            f"- Chunk id: chapter_{chapter['chapter_index']:02d}",
             "",
             "## Notes",
-            "This file is intended to be pasted into a study chat together with the current per-book global working memory.",
+            "This file is intended to be pasted into a chapter study chat together with the current per-book global working memory.",
             "",
             "## Content",
-            chunk["content"].strip(),
+            "",
+            content,
             "",
         ]
 
@@ -515,16 +598,18 @@ def main() -> int:
     strip_repeated_margins(pages)
 
     heading_chunks, stats = build_heading_chunks(pages)
-    use_heading_split = len(heading_chunks) >= 2 and stats["heading_hits"] >= 2
+    use_heading_split = bool(heading_chunks) and (
+        stats["explicit_chapters"] >= 1 or stats["heading_hits"] >= 2
+    )
     split_mode = "heading-based"
     confidence = "good"
 
     if not use_heading_split:
         chunks = build_fallback_chunks(pages)
-        split_mode = "fallback page-window chunking"
+        split_mode = "fallback chapter-sized page-window chunking"
         confidence = "limited"
         warnings.append(
-            "Heading detection was weak, so the script fell back to page-window chunking."
+            "Heading detection was weak, so the script fell back to chapter-sized page-window chunking."
         )
     else:
         chunks = heading_chunks
@@ -538,7 +623,7 @@ def main() -> int:
         )
         return 1
 
-    written_files = write_chunks(
+    written_files = write_chapters(
         chunks=chunks,
         output_dir=output_root,
         book_title=book_title,
@@ -546,7 +631,7 @@ def main() -> int:
     )
 
     print(f"Output directory: {output_root}")
-    print(f"Chunks written: {len(written_files)}")
+    print(f"Chapters written: {len(written_files)}")
     print(f"Split mode: {split_mode}")
     print(f"Split confidence: {confidence}")
     for warning in warnings:

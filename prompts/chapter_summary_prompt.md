@@ -1,15 +1,15 @@
 # Chapter Summary Prompt
 
-Use this later with Codex after you already have multiple detailed section notes for one chapter.
+Use this later with Codex after you already have a detailed chapter export for a chapter.
 
-Your job is to update or create a readable chapter summary from the detailed section notes.
+Your job is to update or create a readable chapter summary from the detailed chapter export.
 
-This is a synthesis task, not a concatenation task.
+This is a synthesis task, not a copy-and-shorten task.
 
 ## Inputs
 
 - the current `chapter_summary.md` if it already exists
-- the detailed section note files for the chapter
+- the detailed chapter export for the chapter
 - optional per-book global working memory if it helps maintain continuity
 
 ## Instructions
@@ -17,7 +17,7 @@ This is a synthesis task, not a concatenation task.
 - Produce a chapter-level markdown summary.
 - Synthesize the chapter's overall argument, progression, and important mechanisms.
 - Preserve important detail that matters at chapter scope.
-- Do not simply stack section summaries one after another.
+- Do not just trim the chapter export down mechanically.
 - Keep the writing readable and coherent.
 - Merge overlapping ideas.
 - Preserve important distinctions, caveats, tradeoffs, and recurring examples.
@@ -27,7 +27,7 @@ This is a synthesis task, not a concatenation task.
 
 ## Target outcome
 
-The result should read like a strong chapter note that someone can review later to quickly recover the chapter's structure and key ideas without rereading every section note.
+The result should read like a strong chapter summary that someone can review later to quickly recover the chapter's structure and key ideas without rereading the full detailed chapter export.
 
 ## Suggested structure
 
@@ -38,7 +38,7 @@ The result should read like a strong chapter note that someone can review later 
 A concise explanation of what this chapter is really doing.
 
 ## Structure Of The Chapter
-- Section/grouping -> role in the chapter
+- Subsection/grouping -> role in the chapter
 
 ## Core Ideas
 - ...

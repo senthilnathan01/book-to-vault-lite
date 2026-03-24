@@ -11,7 +11,7 @@ This file is per book. It is not a repo-wide system note.
 ## Inputs
 
 - the existing per-book `global_working_memory.md` if present
-- recent section notes and chapter summaries
+- recent chapter notes and chapter summaries
 - any current study progress information that matters for continuity
 
 ## Instructions
@@ -36,7 +36,7 @@ This file is per book. It is not a repo-wide system note.
 - Vault path:
 
 ## Current Progress
-- Last completed chapter/section:
+- Last completed chapter:
 - What is currently in progress:
 
 ## Core Mental Models

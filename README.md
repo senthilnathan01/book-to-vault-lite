@@ -1,10 +1,10 @@
 # book-to-vault-lite
 
-Minimal V1 for turning a technical PDF into chat-ready section files, plus the prompts used later to turn study chats into long-term notes.
+Minimal V1 for turning a technical PDF into chat-ready chapter files, plus the prompts used later to turn study chats into long-term notes.
 
 This repo does only two things:
 
-1. Prepare section/chunk files from a PDF with `prepare_sections.py`
+1. Prepare chapter files from a PDF with `prepare_sections.py`
 2. Store the prompts you will later use with ChatGPT, Claude, and Codex
 
 It does not call an LLM automatically.
@@ -15,8 +15,8 @@ It does not add workflow automation.
 
 1. Put a technical PDF somewhere local.
 2. Run `prepare_sections.py` against that PDF.
-3. Copy one generated section file at a time into ChatGPT or Claude.
-4. Study the section and export the final detailed markdown manually.
+3. Copy one generated chapter file at a time into ChatGPT or Claude.
+4. Study the chapter and export the final detailed markdown manually.
 5. Later, use Codex with the prompts in [`prompts/final_export_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/final_export_prompt.md), [`prompts/chapter_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/chapter_summary_prompt.md), and [`prompts/global_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/global_summary_prompt.md) to update notes in the separate `knowledge-vault` repo.
 
 ## Install
@@ -49,19 +49,18 @@ Supported arguments:
 
 - extracts text page by page from the PDF
 - strips repeated headers, footers, and simple page numbers where it can
-- tries to split on chapter and section headings such as `Chapter 1`, `1.1`, `1.2.3`, all-caps headings, and isolated title-style headings
-- falls back to useful page-window chunking when heading detection is weak
-- writes one markdown file per chunk under `data/processed/<book_slug>/...`
+- tries to split on chapter headings such as `Chapter 1` and isolated top-level headings like `1 Introduction`
+- uses section-style headings such as `1.1`, `1.2.3`, all-caps headings, and isolated title-style headings as internal subheadings inside each chapter file when useful
+- falls back to chapter-sized page-window chunking when chapter detection is weak
+- writes one markdown file per chapter under `data/processed/<book_slug>/`
 
 Example output layout:
 
 ```text
 data/processed/<book_slug>/
-  chapter_01/
-    section_01.md
-    section_02.md
-  chapter_02/
-    section_01.md
+  chapter01.md
+  chapter02.md
+  chapter03.md
 ```
 
 Each generated file starts with metadata:
@@ -69,16 +68,15 @@ Each generated file starts with metadata:
 - Book
 - Author
 - Chapter
-- Section
 - Source pages
 - Chunk id
 
-The chunk files are formatted so they can be pasted directly into a study chat.
+The chapter files are formatted so they can be pasted directly into a chapter study chat.
 
 ## Prompts
 
-- [`prompts/final_export_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/final_export_prompt.md): use at the end of a section study chat to produce a detailed long-term markdown export
-- [`prompts/chapter_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/chapter_summary_prompt.md): use later with Codex to turn multiple section notes into a readable chapter summary
+- [`prompts/final_export_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/final_export_prompt.md): use at the end of a chapter study chat to produce a detailed long-term markdown export
+- [`prompts/chapter_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/chapter_summary_prompt.md): use later with Codex to turn a detailed chapter export into a readable chapter summary
 - [`prompts/global_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/global_summary_prompt.md): use later with Codex to maintain a compact per-book working memory file
 
 ## Vault assumptions
@@ -90,8 +88,8 @@ The prompts assume a target structure like:
 ```text
 01_books/<book_slug>/_system/global_working_memory.md
 01_books/<book_slug>/_system/book_index.md
+01_books/<book_slug>/chapter_01/chapter_note.md
 01_books/<book_slug>/chapter_01/chapter_summary.md
-01_books/<book_slug>/chapter_01/section_01_note.md
 02_concepts/
 ```
 
@@ -107,4 +105,4 @@ It should not live in a repo-wide system folder.
 
 This is intentionally a small V1. It is designed to work for a normal text-based technical PDF, not every possible PDF layout.
 
-If extraction quality is poor, the script warns clearly. If heading detection is weak, it falls back to page-window chunking and tells you that explicitly.
+If extraction quality is poor, the script warns clearly. If heading detection is weak, it falls back to chapter-sized page-window chunking and tells you that explicitly.
