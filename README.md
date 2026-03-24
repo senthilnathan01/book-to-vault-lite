@@ -11,13 +11,60 @@ It does not call an LLM automatically.
 It does not write into `knowledge-vault`.
 It does not add workflow automation.
 
-## Minimal workflow
+## Prompt Templates
 
-1. Put a technical PDF somewhere local.
-2. Run `prepare_sections.py` against that PDF.
-3. Copy one generated chapter file at a time into ChatGPT or Claude.
-4. Study the chapter and export the final detailed markdown manually.
-5. Later, use Codex with the prompts in [`prompts/final_export_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/final_export_prompt.md), [`prompts/chapter_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/chapter_summary_prompt.md), and [`prompts/global_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/global_summary_prompt.md) to update notes in the separate `knowledge-vault` repo.
+These prompts are meant for a simple chapter-wise workflow.
+
+### Files
+
+- `prompts/study_prompt.md`  
+  Use in ChatGPT or Claude when you paste:
+  1. the current per-book global working memory
+  2. one chapter markdown file
+
+- `prompts/export_prompt.md`  
+  Use at the end of the study chat to generate the final chapter export.
+
+- `prompts/vault_update_prompt.md`  
+  Use in Codex after you save the export file locally. This updates the target vault repo.
+
+### What you need to change
+
+Replace placeholders like these before use:
+
+- `<BOOK_TITLE>`
+- `<BOOK_AUTHOR>`
+- `<BOOK_SLUG>`
+- `<CHAPTER_NUMBER>`
+- `<CHAPTER_TITLE>`
+- `<CHAPTER_FILE_PATH>`
+- `<EXPORT_FILE_PATH>`
+- `<TARGET_VAULT_REPO>`
+- `<BOOK_FOLDER_PATH>`
+- `<GLOBAL_MEMORY_PATH>`
+- `<BOOK_INDEX_PATH>`
+- `<CHAPTER_NOTE_PATH>`
+
+### Recommended flow
+
+1. Run your PDF parsing script and get chapter markdown files.
+2. Open one chapter file.
+3. In ChatGPT/Claude, paste:
+   - the per-book global working memory
+   - the chapter markdown
+   - `study_prompt.md`
+4. Ask questions until you understand the chapter.
+5. Paste `export_prompt.md`.
+6. Save the result as a markdown export file.
+7. Open Codex and paste `vault_update_prompt.md`.
+8. Let Codex update the notes in your vault repo.
+
+### Notes
+
+- Global working memory is per book.
+- Keep the working memory compact.
+- Keep the chapter export detailed.
+- The export file is the bridge between the study chat and the vault.
 
 ## Install
 
@@ -72,12 +119,6 @@ Each generated file starts with metadata:
 - Chunk id
 
 The chapter files are formatted so they can be pasted directly into a chapter study chat.
-
-## Prompts
-
-- [`prompts/final_export_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/final_export_prompt.md): use at the end of a chapter study chat to produce a detailed long-term markdown export
-- [`prompts/chapter_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/chapter_summary_prompt.md): use later with Codex to turn a detailed chapter export into a readable chapter summary
-- [`prompts/global_summary_prompt.md`](/Users/tsn/Documents/book-to-vault-lite/prompts/global_summary_prompt.md): use later with Codex to maintain a compact per-book working memory file
 
 ## Vault assumptions
 
